@@ -157,12 +157,6 @@ function handleErr(error, res) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
-app.post("/post-test", (req, res) => {
-  const bodyContent = req.body.name;
-  res.send({
-    message: bodyContent,
-  });
-});
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
