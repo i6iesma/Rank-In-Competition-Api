@@ -7,8 +7,8 @@ const port = 3000;
 
 // Create a rate-limited axios instance with an increased timeout
 const http = axiosRateLimit(axios.create({
-    timeout: 10000 // Increase timeout to 10 seconds
-}), { maxRPS: 15 }); // limit to 5 requests per second
+    timeout: 5000 // Increase timeout to 10 seconds
+}), { maxRPS: 150 }); // limit to 5 requests per second
 
 // Add retry functionality to the rate-limited axios instance
 axiosRetry(http, { 
@@ -53,8 +53,20 @@ app.get('/', async (req, res) => {
         res.json(competitorsData);
 
     } catch (error) {
+        if (axios.isAxiosError(error)) {
+            if (error.code === "ECONNABORTED") {
+                console.error("Error fetching competitors data, timeout exceded. Consider increasing the timeout time")
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+            else {
+                console.error("Axios Error (not timeout)", error );
+            res.status(500).json({ error: 'Internal Server Error' });
+            }
+        }
+        else {
         console.error('Error fetching competitors data:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+        }
     }
 });
 
