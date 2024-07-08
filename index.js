@@ -27,7 +27,6 @@ app.get("/", async (req, res) => {
   const eventFormat = req.query.format;
   let competitorsInComp = [];
   let competitorsData = [];
-  let currentProg = 0;
   try {
     // Get the list of competitors in the competition
     let response = await http.get(
