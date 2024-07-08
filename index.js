@@ -10,7 +10,7 @@ const http = axiosRateLimit(
   axios.create({
     timeout: 20000, // Increase timeout to 10 seconds
   }),
-  { maxRPS: 5 }
+  { maxRPS: 20 }
 ); // limit to 5 requests per second
 
 // Add retry functionality to the rate-limited axios instance
