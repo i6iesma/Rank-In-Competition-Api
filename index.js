@@ -21,6 +21,7 @@ axiosRetry(http, {
     axiosRetry.isNetworkOrIdempotentRequestError(error), // retry on network errors or idempotent requests
 });
 
+export const maxDuration = 60; // This is for vercel
 app.get("/", async (req, res) => {
   const compId = req.query.compId;
   const eventId = req.query.eventId;
