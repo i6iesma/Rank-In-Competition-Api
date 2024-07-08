@@ -6,91 +6,164 @@ const axiosRetry = require("axios-retry").default;
 const port = 3000;
 
 // Create a rate-limited axios instance with an increased timeout
-const http = axiosRateLimit(axios.create({
-    timeout: 5000 // Increase timeout to 10 seconds
-}), { maxRPS: 150 }); // limit to 5 requests per second
+const http = axiosRateLimit(
+  axios.create({
+    timeout: 20000, // Increase timeout to 10 seconds
+  }),
+  { maxRPS: 5 }
+); // limit to 5 requests per second
 
 // Add retry functionality to the rate-limited axios instance
-axiosRetry(http, { 
-    retries: 3, // number of retries
-    retryDelay: axiosRetry.exponentialDelay, // exponential backoff delay between retries
-    retryCondition: (error) => axiosRetry.isNetworkOrIdempotentRequestError(error) // retry on network errors or idempotent requests
+axiosRetry(http, {
+  retries: 3, // number of retries
+  retryDelay: axiosRetry.exponentialDelay, // exponential backoff delay between retries
+  retryCondition: (error) =>
+    axiosRetry.isNetworkOrIdempotentRequestError(error), // retry on network errors or idempotent requests
 });
 
-app.get('/', async (req, res) => {
-    const compId = req.query.compId;
-    const eventId = req.query.eventId;
-    let competitorsInComp = [];
-    let competitorsData = [];
-    let currentProg = 0
-    try {
-        // Get the list of competitors in the competition 
-        let response = await http.get(`https://competitors-in-competition.vercel.app/${compId}`);
-        competitorsInComp = response.data;
-        console.log(competitorsInComp);
+app.get("/", async (req, res) => {
+  const compId = req.query.compId;
+  const eventId = req.query.eventId;
+  const eventFormat = req.query.format;
+  let competitorsInComp = [];
+  let competitorsData = [];
+  let currentProg = 0;
+  try {
+    // Get the list of competitors in the competition
+    let response = await http.get(
+      `https://competitors-in-competition.vercel.app/${compId}`
+    );
+    competitorsInComp = response.data;
+    console.log(competitorsInComp);
 
-        const totalCompetitors = competitorsInComp.length;
+    const totalCompetitors = competitorsInComp.length;
 
-        // Use Promise.all to fetch data for all competitors concurrently with rate limiting and retries
-        const competitorPromises = competitorsInComp.map(async (id, index) => {
-            try {
-                const response = await http.get(`https://raw.githubusercontent.com/robiningelbrecht/wca-rest-api/master/api/persons/${id}.json`);
-                const eventPb = getEventPbs(response.data.rank, eventId)[0]?.best; // Use optional chaining in case the event is not found
-                console.log(`eventPb for competitor ${id}:`, eventPb);
-                
-                return {
-                    "pb": eventPb,
-                    "id": response.data.id
-                };
-            } catch (error) {
-                console.error(`Error fetching data for competitor ${id} (index ${index + 1}):`, error);
-                return null; // Return null if there's an error fetching data for a specific competitor
-            }
-        });
+    // Use Promise.all to fetch data for all competitors concurrently with rate limiting and retries
+    const competitorPromises = competitorsInComp.map(async (id, index) => {
+      const response = await http.get(
+        `https://raw.githubusercontent.com/robiningelbrecht/wca-rest-api/master/api/persons/${id}.json`
+      );
+      const eventPbSingle = getEventPbsSingles(response.data.rank, eventId)[0]
+        ?.best; // Use optional chaining in case the event is not found
+      const eventPbAvg = getEventPbsAvg(response.data.rank, eventId)[0]?.best; // Use optional chaining in case the event is not found
 
-        competitorsData = await Promise.all(competitorPromises);
-        competitorsData = competitorsData.filter(data => data !== null); // Filter out null values
-        res.json(competitorsData);
+      return {
+        single: eventPbSingle,
+        avg: eventPbAvg,
+        id: response.data.id,
+      };
+    });
 
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            if (error.code === "ECONNABORTED") {
-                console.error("Error fetching competitors data, timeout exceded. Consider increasing the timeout time")
-                res.status(500).json({ error: 'Internal Server Error' });
-            }
-            else {
-                console.error("Axios Error (not timeout)", error );
-            res.status(500).json({ error: 'Internal Server Error' });
-            }
-        }
-        else {
-        console.error('Error fetching competitors data:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-        }
-    }
+    competitorsData = await Promise.all(competitorPromises);
+    competitorsData = competitorsData.filter((data) => data !== null); // Filter out null values
+    // let finalData = formatTimes(sortCompetitorsData(competitorsData));
+    let finalData = formatDecimals(
+      formatTimes(sortCompetitorsData(competitorsData, eventFormat))
+    );
+    console.log("Finished!");
+    res.json(finalData);
+  } catch (error) {
+    handleErr(error, res);
+  }
 });
-
-function getEventPbs(competitorData, eventId) {
-    console.log(`getEventPbs called with competitorData:`, competitorData);
-    console.log(`getEventPbs called with eventId:`, eventId);
-    
-    if (!competitorData || !competitorData.singles) {
-        console.error(`Invalid competitorData:`, competitorData);
-        return [];
-    }
-    
-    const filteredData = competitorData.singles.filter(event => event.eventId === eventId);
-    console.log(`Filtered data:`, filteredData);
-    return filteredData;
+function formatTimes(competitorsData) {
+  return competitorsData.map((user) => ({
+    id: user.id,
+    single: user.single / 100,
+    avg: user.avg / 100,
+  }));
+}
+function sortCompetitorsData(competitorsData, eventFormat) {
+  pb = eventFormat; // Either single or avg, dictated by the object design of competitorsData
+  if (eventFormat === "single") {
+    competitorsData.sort((a, b) => {
+      if (a.single < b.single) {
+        return -1;
+      }
+      if (a.single > b.single) {
+        return 1;
+      }
+      if (a.single === b.single) {
+        return 0;
+      }
+    });
+  }
+  if (eventFormat === "avg") {
+    competitorsData.sort((a, b) => {
+      if (a.avg < b.avg) {
+        return -1;
+      }
+      if (a.avg > b.avg) {
+        return 1;
+      }
+      if (a.avg === b.avg) {
+        return 0;
+      }
+    });
+  }
+  return competitorsData;
+}
+function formatDecimals(data) {
+  return data.map((item) => {
+    item.single = item.single.toFixed(2);
+    item.avg = item.avg.toFixed(2);
+    return item;
+  });
 }
 
-app.post('/post-test', (req, res) => {
-    const bodyContent = req.body.name;
-    res.send({
-        message: bodyContent
-    });
+function getEventPbsSingles(competitorData, eventId) {
+  console.log(`getEventPbs called with competitorData:`, competitorData);
+  console.log(`getEventPbs called with eventId:`, eventId);
+
+  if (!competitorData || !competitorData.singles) {
+    console.error(`Invalid competitorData:`, competitorData);
+    return [];
+  }
+
+  const filteredData = competitorData.singles.filter(
+    (event) => event.eventId === eventId
+  );
+  console.log(`Filtered data:`, filteredData);
+  return filteredData;
+}
+function getEventPbsAvg(competitorData, eventId) {
+  console.log(`getEventPbs called with competitorData:`, competitorData);
+  console.log(`getEventPbs called with eventId:`, eventId);
+
+  if (!competitorData || !competitorData.averages) {
+    console.error(`Invalid competitorData:`, competitorData);
+    return [];
+  }
+
+  const filteredData = competitorData.averages.filter(
+    (event) => event.eventId === eventId
+  );
+  console.log(`Filtered data:`, filteredData);
+  return filteredData;
+}
+function handleErr(error, res) {
+  if (axios.isAxiosError(error)) {
+    if (error.code === "ECONNABORTED") {
+      console.error(
+        "Error fetching competitors data, timeout exceded. Consider increasing the timeout time"
+      );
+      res.status(500).json({ error: "Internal Server Error" });
+    } else {
+      console.error("Axios Error (not timeout)", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  } else {
+    console.error("Error fetching competitors data:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+app.post("/post-test", (req, res) => {
+  const bodyContent = req.body.name;
+  res.send({
+    message: bodyContent,
+  });
 });
 
 app.listen(port, () => {
-    console.log(`Listening on port ${port}`);
+  console.log(`Listening on port ${port}`);
 });
