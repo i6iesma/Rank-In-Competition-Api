@@ -10,7 +10,7 @@ const http = axiosRateLimit(
   axios.create({
     timeout: 20000, // Increase timeout to 10 seconds
   }),
-  { maxRPS: 150 }
+  { maxRPS: 5 }
 ); // limit to 5 requests per second
 
 // Add retry functionality to the rate-limited axios instance
@@ -45,7 +45,7 @@ app.get("/", async (req, res) => {
       const eventPbSingle = getEventPbsSingles(response.data.rank, eventId)[0]
         ?.best; // Use optional chaining in case the event is not found
       const eventPbAvg = getEventPbsAvg(response.data.rank, eventId)[0]?.best; // Use optional chaining in case the event is not found
-
+      console.log(`Id is ${id}`);
       return {
         single: eventPbSingle,
         avg: eventPbAvg,
@@ -57,7 +57,7 @@ app.get("/", async (req, res) => {
     competitorsData = competitorsData.filter((data) => data !== null); // Filter out null values
     // let finalData = formatTimes(sortCompetitorsData(competitorsData));
     let finalData = formatDecimals(
-      formatTimes(sortCompetitorsData(competitorsData, eventFormat))
+      formatTimes(sortArray(competitorsData, eventFormat))
     );
     console.log("Finished!");
     res.json(finalData);
@@ -72,36 +72,14 @@ function formatTimes(competitorsData) {
     avg: user.avg / 100,
   }));
 }
-function sortCompetitorsData(competitorsData, eventFormat) {
-  pb = eventFormat; // Either single or avg, dictated by the object design of competitorsData
-  if (eventFormat === "single") {
-    competitorsData.sort((a, b) => {
-      if (a.single < b.single) {
-        return -1;
-      }
-      if (a.single > b.single) {
-        return 1;
-      }
-      if (a.single === b.single) {
-        return 0;
-      }
-    });
+const sortArray = (arr, sortBy) => {
+  if (!["single", "avg"].includes(sortBy)) {
+    throw new Error("Invalid sortBy value. Use 'single' or 'avg'.");
   }
-  if (eventFormat === "avg") {
-    competitorsData.sort((a, b) => {
-      if (a.avg < b.avg) {
-        return -1;
-      }
-      if (a.avg > b.avg) {
-        return 1;
-      }
-      if (a.avg === b.avg) {
-        return 0;
-      }
-    });
-  }
-  return competitorsData;
-}
+
+  return arr.sort((a, b) => a[sortBy] - b[sortBy]);
+};
+
 function formatDecimals(data) {
   return data.map((item) => {
     item.single = item.single.toFixed(2);
@@ -111,9 +89,6 @@ function formatDecimals(data) {
 }
 
 function getEventPbsSingles(competitorData, eventId) {
-  console.log(`getEventPbs called with competitorData:`, competitorData);
-  console.log(`getEventPbs called with eventId:`, eventId);
-
   if (!competitorData || !competitorData.singles) {
     console.error(`Invalid competitorData:`, competitorData);
     return [];
@@ -126,9 +101,6 @@ function getEventPbsSingles(competitorData, eventId) {
   return filteredData;
 }
 function getEventPbsAvg(competitorData, eventId) {
-  console.log(`getEventPbs called with competitorData:`, competitorData);
-  console.log(`getEventPbs called with eventId:`, eventId);
-
   if (!competitorData || !competitorData.averages) {
     console.error(`Invalid competitorData:`, competitorData);
     return [];
