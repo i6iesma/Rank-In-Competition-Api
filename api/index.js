@@ -21,16 +21,16 @@ axiosRetry(http, {
     axiosRetry.isNetworkOrIdempotentRequestError(error), // retry on network errors or idempotent requests
 });
 
-app.get("/", async (req, res) => {
-  const compId = req.query.compId;
-  const eventId = req.query.eventId;
-  const eventFormat = req.query.format;
+app.get("/competitions/:compId/events/:eventId/formats/:format", async (req, res) => {
+  const compId = req.params.compId;
+  const eventId = req.params.eventId;
+  const eventFormat = req.params.format;
   let competitorsInComp = [];
   let competitorsData = [];
   try {
     // Get the list of competitors in the competition
     let response = await http.get(
-      `https://competitors-in-competition.vercel.app/${compId}`
+      `https://competitors-in-competition.vercel.app/competitions/${compId}`
     );
     competitorsInComp = response.data;
     console.log(competitorsInComp);

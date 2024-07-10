@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: Rank in Competition API
+  version: 1.0.0
+servers:
+  - url: https://rank-in-competition-api.vercel.app  # Replace with your actual base URL
+    description: Production server
+
+paths:
+  /competitions/{competitionId}/events/{eventId}/formats/{format}:
+    get:
+      summary: Get the competitors in a competition ranked by the event specified and in the specified format
+      parameters:
+        - name: competitionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: ["333", "222", "333bf", "333fm", "333ft", "333mbf", "333oh", "444", "444bf", "555", "555bf", "666", "777", "clock", "minx", "pyram", "skewb", "sq1"]
+        - name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: ["single", "avg"]
+      responses:
+        '200':
+          description: List of competitors ranked in 3x3 by single in competition SpeedcubeBajaOpen2024
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "2016MART09"
+                    single:
+                      type: string
+                      example: "7.22"
+                    avg:
+                      type: string
+                      example: "8.76"
+                example:
+                  - id: "2016MART09"
+                    single: "7.22"
+                    avg: "8.76"
+                  - id: "2016FLOR18"
+                    single: "7.10"
+                    avg: "8.77"
