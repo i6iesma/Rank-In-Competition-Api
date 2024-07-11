@@ -6,7 +6,7 @@ const axiosRetry = require("axios-retry").default;
 const port = 3000;
 
 // Serve the documentation as a static file on root
-app.use(express.static('docs'))
+app.use(express.static('.'))
 
 // Create a rate-limited axios instance with an increased timeout
 const http = axiosRateLimit(

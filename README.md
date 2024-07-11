@@ -3,3 +3,4 @@
 
 # Usage
 Docs on https://i6iesma.github.io/Rank-In-Competition-Api/
+Live on https://rank-in-competition-api.vercel.app/
