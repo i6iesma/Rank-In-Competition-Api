@@ -692,11 +692,17 @@
             defs["inline_response_200"] = {
   "type" : "object",
   "properties" : {
-    "formatName" : {
-      "type" : "string"
+    "id" : {
+      "type" : "string",
+      "example" : "2016MART09"
     },
-    "description" : {
-      "type" : "string"
+    "single" : {
+      "type" : "string",
+      "example" : "7.22"
+    },
+    "avg" : {
+      "type" : "string",
+      "example" : "8.76"
     }
   }
 };
@@ -795,7 +801,7 @@ public class DefaultApiExample {
         String eventId = eventId_example; // String | 
         String format = format_example; // String | 
         try {
-            inline_response_200 result = apiInstance.competitionsCompetitionIdEventsEventIdFormatsFormatGet(competitionId, eventId, format);
+            array[inline_response_200] result = apiInstance.competitionsCompetitionIdEventsEventIdFormatsFormatGet(competitionId, eventId, format);
             System.out.println(result);
         } catch (ApiException e) {
             System.err.println("Exception when calling DefaultApi#competitionsCompetitionIdEventsEventIdFormatsFormatGet");
@@ -816,7 +822,7 @@ public class DefaultApiExample {
         String eventId = eventId_example; // String | 
         String format = format_example; // String | 
         try {
-            inline_response_200 result = apiInstance.competitionsCompetitionIdEventsEventIdFormatsFormatGet(competitionId, eventId, format);
+            array[inline_response_200] result = apiInstance.competitionsCompetitionIdEventsEventIdFormatsFormatGet(competitionId, eventId, format);
             System.out.println(result);
         } catch (ApiException e) {
             System.err.println("Exception when calling DefaultApi#competitionsCompetitionIdEventsEventIdFormatsFormatGet");
@@ -840,7 +846,7 @@ DefaultApi *apiInstance = [[DefaultApi alloc] init];
 [apiInstance competitionsCompetitionIdEventsEventIdFormatsFormatGetWith:competitionId
     eventId:eventId
     format:format
-              completionHandler: ^(inline_response_200 output, NSError* error) {
+              completionHandler: ^(array[inline_response_200] output, NSError* error) {
                             if (output) {
                                 NSLog(@"%@", output);
                             }
@@ -895,7 +901,7 @@ namespace Example
             try
             {
                 // Get the competitors in a competition ranked by the event specified and in the specified format
-                inline_response_200 result = apiInstance.competitionsCompetitionIdEventsEventIdFormatsFormatGet(competitionId, eventId, format);
+                array[inline_response_200] result = apiInstance.competitionsCompetitionIdEventsEventIdFormatsFormatGet(competitionId, eventId, format);
                 Debug.WriteLine(result);
             }
             catch (Exception e)
@@ -1039,7 +1045,7 @@ except ApiException as e:
 
 
                           <h2>Responses</h2>
-                            <h3> Status: 200 - Format retrieved successfully </h3>
+                            <h3> Status: 200 - List of competitors ranked in 3x3 by single in competition SpeedcubeBajaOpen2024 </h3>
 
                             <ul class="nav nav-tabs nav-tabs-examples" >
                                 <li class="active">
@@ -1054,11 +1060,24 @@ except ApiException as e:
                                     <script>
                                       $(document).ready(function() {
                                         var schemaWrapper = {
-  "description" : "Format retrieved successfully",
+  "description" : "List of competitors ranked in 3x3 by single in competition SpeedcubeBajaOpen2024",
   "content" : {
     "application/json" : {
       "schema" : {
-        "$ref" : "#/components/schemas/inline_response_200"
+        "type" : "array",
+        "example" : [ {
+          "id" : "2016MART09",
+          "single" : "7.22",
+          "avg" : "8.76"
+        }, {
+          "id" : "2016FLOR18",
+          "single" : "7.10",
+          "avg" : "8.77"
+        } ],
+        "items" : {
+          "$ref" : "#/components/schemas/inline_response_200"
+        },
+        "x-content-type" : "application/json"
       }
     }
   }
