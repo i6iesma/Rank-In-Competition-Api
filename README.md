@@ -4,3 +4,6 @@
 # Usage
 Live on https://rank-in-competition-api.vercel.app/
 Docs on https://rank-in-competition-api.vercel.app/
+
+## Notes
+To generate docs go to swagger.com
